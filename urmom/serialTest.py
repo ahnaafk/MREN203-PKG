@@ -8,28 +8,33 @@ class MinimalSubscriber(Node):
 
     def __init__(self):
         super().__init__('minimal_subscriber')
-        ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
-        ser.reset_input_buffer()
+    
+        self.ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
         self.subscription = self.create_subscription(
             String,
             'topic',
-            self.listener_callback(ser=ser),
             10)
         self.subscription  # prevent unused variable warning
+	timer_period = 0.5
+	self.timer = self.createtimer(timer_period, self.listener_callback)
     
     #this will be what writes to serial. 
-    def listener_callback(self, msg, ser):
+    def listener_callback(self, msg):
+	
         self.get_logger().info('I heard: "%s"' % msg.data)
-        ser.write(f'{msg.data}\n'.encode())
-        line = ser.readline().decode('utf-8').rstrip()
+        self.ser.write(f'{msg.data}\n'.encode())
+        line = self.ser.readline().decode('utf-8').rstrip()
         self.get_logger().info('So I wrote: "%s"' % line)
 
 
 def main(args=None):
-    ##startup code
+    ##startup cod
+    
+    ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
+    ser.reset_input_buffer()
     rclpy.init(args=args)
     
-    minimal_subscriber = MinimalSubscriber()
+    minimal_subscriber = MinimalSubscriber(ser)
 
     rclpy.spin(minimal_subscriber)
 
