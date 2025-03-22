@@ -20,6 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'talker = urmom.publisher_member_function:main',
+            'listener = urmom.subscriber_member_function:main',
         ],
     },
 )
