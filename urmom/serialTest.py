@@ -9,32 +9,32 @@ class MinimalSubscriber(Node):
     def __init__(self):
         super().__init__('minimal_subscriber')
     
-        self.ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
+        self.ser = serial.Serial('/dev/ttyACM1', 9600, timeout=1)
         self.subscription = self.create_subscription(
             String,
             'topic',
-            10)
+            callback=self.listener_callback,
+            qos_profile=10)
         self.subscription  # prevent unused variable warning
-	timer_period = 0.5
-	self.timer = self.createtimer(timer_period, self.listener_callback)
-    
+        timer_period = 0.5
+        #self.timer = self.createtimer(timer_period, self.listener_callback)
+ 
     #this will be what writes to serial. 
     def listener_callback(self, msg):
-	
         self.get_logger().info('I heard: "%s"' % msg.data)
         self.ser.write(f'{msg.data}\n'.encode())
-        line = self.ser.readline().decode('utf-8').rstrip()
-        self.get_logger().info('So I wrote: "%s"' % line)
+        #line = self.ser.readline().decode('utf-8').rstrip()
+        self.get_logger().info('So I wrote: "%s"' % msg.data)
 
 
 def main(args=None):
     ##startup cod
     
-    ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
+    ser = serial.Serial('/dev/ttyACM1', 9600, timeout=1)
     ser.reset_input_buffer()
     rclpy.init(args=args)
     
-    minimal_subscriber = MinimalSubscriber(ser)
+    minimal_subscriber = MinimalSubscriber()
 
     rclpy.spin(minimal_subscriber)
 
