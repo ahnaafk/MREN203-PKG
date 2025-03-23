@@ -22,6 +22,7 @@ setup(
         'console_scripts': [
             'talker = urmom.publisher_member_function:main',
             'listener = urmom.subscriber_member_function:main',
+            'serialTest = urmom.serialTest:main'
         ],
     },
 )
