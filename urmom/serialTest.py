@@ -3,24 +3,43 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import String
-
-class MinimalSubscriber(Node):
+PORT = '/dev/ttyACM1'
+BAUD = 9600
+class ArduinoInterface(Node):
 
     def __init__(self):
-        super().__init__('minimal_subscriber')
-    
-        self.ser = serial.Serial('/dev/ttyACM1', 9600, timeout=1)
+        super().__init__('arduino_interface')
+
+
+        self.ser = serial.Serial(PORT, BAUD, timeout=1)
+        self.ser.reset_input_buffer()
         self.subscription = self.create_subscription(
             String,
-            'topic',
-            callback=self.listener_callback,
+            'motor_input',
+            callback=self.serialWrite,
             qos_profile=10)
         self.subscription  # prevent unused variable warning
-        timer_period = 0.5
-        #self.timer = self.createtimer(timer_period, self.listener_callback)
- 
-    #this will be what writes to serial. 
-    def listener_callback(self, msg):
+        
+        self.publisher_ = self.create_publisher(String, 'odemetry', 10)
+        timer_period = 0.1  # seconds
+        self.timer = self.create_timer(timer_period, self.serialRead)
+        self.i = 0
+
+    #serialRead takes in odemetry data and formats it accordingly for the odemetry topic. 
+    def serialRead(self):
+        msg = String()
+        line = self.ser.readline().decode('utf-8').rstrip()
+        
+        msg.data = line
+        #TODO: parse the serial to check if it is odemetry data or not. if it is, publish it.
+        #TODO: format the odemetry data
+        self.publisher_.publish(msg)
+        self.get_logger().info('Publishing: "%s"' % msg.data)
+        self.i += 1
+        
+
+    #serialWrite will take in a string message and write it to the serial port.
+    def serialWrite(self, msg):
         self.get_logger().info('I heard: "%s"' % msg.data)
         self.ser.write(f'{msg.data}\n'.encode())
         #line = self.ser.readline().decode('utf-8').rstrip()
@@ -28,20 +47,15 @@ class MinimalSubscriber(Node):
 
 
 def main(args=None):
-    ##startup cod
-    
-    ser = serial.Serial('/dev/ttyACM1', 9600, timeout=1)
-    ser.reset_input_buffer()
     rclpy.init(args=args)
     
-    minimal_subscriber = MinimalSubscriber()
-
-    rclpy.spin(minimal_subscriber)
+    arduino_interface = ArduinoInterface()
+    rclpy.spin(arduino_interface)
 
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically
     # when the garbage collector destroys the node object)
-    minimal_subscriber.destroy_node()
+    arduino_interface.destroy_node()
     rclpy.shutdown()
 
 
