@@ -2,8 +2,9 @@ import serial
 import rclpy
 from rclpy.node import Node
 
+from geometry_msgs.msg import TwistStamped
 from std_msgs.msg import String
-PORT = '/dev/ttyACM1'
+PORT = '/dev/ttyACM0'
 BAUD = 9600
 class ArduinoInterface(Node):
 
@@ -20,17 +21,16 @@ class ArduinoInterface(Node):
             qos_profile=10)
         self.subscription  # prevent unused variable warning
         
-        self.publisher_ = self.create_publisher(String, 'odemetry', 10)
+        self.publisher_ = self.create_publisher(TwistStamped, 'cmd_vel', 10)
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.serialRead)
         self.i = 0
 
     #serialRead takes in odemetry data and formats it accordingly for the odemetry topic. 
     def serialRead(self):
-        msg = String()
         line = self.ser.readline().decode('utf-8').rstrip()
         
-        msg.data = line
+        #msg.data = line
         #TODO: parse the serial to check if it is odemetry data or not. if it is, publish it.
         #TODO: format the odemetry data
         self.publisher_.publish(msg)
@@ -42,7 +42,6 @@ class ArduinoInterface(Node):
     def serialWrite(self, msg):
         self.get_logger().info('I heard: "%s"' % msg.data)
         self.ser.write(f'{msg.data}\n'.encode())
-        #line = self.ser.readline().decode('utf-8').rstrip()
         self.get_logger().info('So I wrote: "%s"' % msg.data)
 
 
