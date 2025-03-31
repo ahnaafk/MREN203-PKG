@@ -28,6 +28,66 @@ class ArduinoInterface(Node):
         timer_period = 0.2  # seconds
         #self.timer = self.create_timer(timer_period, self.serialRead)
         self.i = 0
+          # Publishers
+        self.odom_pub = self.create_publisher(Odometry, '/odom', 10)
+        self.tf_broadcaster = tf2_ros.TransformBroadcaster(self)
+
+        # Simulated robot state
+        self.x = 0.0
+        self.y = 0.0
+        self.theta = 0.0
+        self.last_time = self.get_clock().now()
+
+        # Timer to update odometry
+        self.create_timer(0.05, self.update_odometry)  # 20 Hz
+
+    def update_odometry(self):
+        # Simulated wheel encoder readings (replace with real sensor data)
+        v_left = 0.2   # Left wheel velocity (m/s)
+        v_right = 0.2  # Right wheel velocity (m/s)
+        wheel_base = 0.5  # Distance between wheels (meters)
+        
+        # Time step
+        current_time = self.get_clock().now()
+        dt = (current_time - self.last_time).nanoseconds / 1e9
+        self.last_time = current_time
+
+        # Compute robot velocity
+        v = (v_left + v_right) / 2
+        omega = (v_right - v_left) / wheel_base
+
+        # Update robot position
+        self.x += v * math.cos(self.theta) * dt
+        self.y += v * math.sin(self.theta) * dt
+        self.theta += omega * dt
+
+        # Publish Odometry message
+        odom_msg = Odometry()
+        odom_msg.header.stamp = current_time.to_msg()
+        odom_msg.header.frame_id = "odom"
+        odom_msg.child_frame_id = "base_link"
+        odom_msg.pose.pose.position.x = self.x
+        odom_msg.pose.pose.position.y = self.y
+        odom_quat = tf_transformations.quaternion_from_euler(0, 0, self.theta)
+        odom_msg.pose.pose.orientation.x = odom_quat[0]
+        odom_msg.pose.pose.orientation.y = odom_quat[1]
+        odom_msg.pose.pose.orientation.z = odom_quat[2]
+        odom_msg.pose.pose.orientation.w = odom_quat[3]
+        self.odom_pub.publish(odom_msg)
+
+        # Publish TF transformation
+        odom_tf = TransformStamped()
+        odom_tf.header.stamp = current_time.to_msg()
+        odom_tf.header.frame_id = "odom"
+        odom_tf.child_frame_id = "base_link"
+        odom_tf.transform.translation.x = self.x
+        odom_tf.transform.translation.y = self.y
+        odom_tf.transform.rotation.x = odom_quat[0]
+        odom_tf.transform.rotation.y = odom_quat[1]
+        odom_tf.transform.rotation.z = odom_quat[2]
+        odom_tf.transform.rotation.w = odom_quat[3]
+        self.tf_broadcaster.sendTransform(odom_tf)
+
     def serialRead(self):
         """Reads odometry data from Arduino and publishes to cmd_vel"""
         msg = TwistStamped()
