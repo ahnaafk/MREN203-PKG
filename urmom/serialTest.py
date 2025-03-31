@@ -12,7 +12,7 @@ from geometry_msgs.msg import TransformStamped
 import math
 import json
 
-PORT = '/dev/ttyACM0'
+PORT = '/dev/ttyACM1'
 BAUD = 115200
 class ArduinoInterface(Node):
 
@@ -54,6 +54,7 @@ class ArduinoInterface(Node):
         
         try:
             line = self.ser.readline().decode('utf-8').strip()  # Read a full line
+            line = line[36:]
             
             if not line:  # Ignore empty reads
                 return
@@ -68,7 +69,7 @@ class ArduinoInterface(Node):
             #self.get_logger().info(f'trans_vd: {self.v}')
             #self.get_logger().info(f'angular_vd: {self.w}')
             # self.get_logger().info(f'Publishing: {msg}')
-            self.get_logger().info(f'Serial RAW: {line}')
+            #self.get_logger().info(f'Serial RAW: {line}')
             
             #current_time = self.get_clock().now()
             #dt = (current_time - self.last_time).nanoseconds / 1e9
@@ -126,7 +127,6 @@ class ArduinoInterface(Node):
 
         self.ser.reset_output_buffer()  # Clear unsent data before writing
         self.ser.write((json_write + '\n').encode())  # Send JSON with newline
-        
         self.get_logger().info(f'I heard: {json_write}')
         self.serialRead()
 
