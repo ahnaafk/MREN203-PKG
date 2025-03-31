@@ -7,8 +7,8 @@ from std_msgs.msg import String
 from std_msgs.msg import Float32MultiArray
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TransformStamped
-import tf_transformations
-import tf2_ros
+#import tf_transformations
+#import tf2_ros
 import math
 import json
 
@@ -35,7 +35,7 @@ class ArduinoInterface(Node):
         self.i = 0
           # Odom Publishers
         self.odom_pub = self.create_publisher(Odometry, '/odom', 10)
-        self.tf_broadcaster = tf2_ros.TransformBroadcaster(self)
+ #       self.tf_broadcaster = tf2_ros.TransformBroadcaster(self)
 
         # Simulated robot state
         self.x = 0.0
@@ -61,29 +61,28 @@ class ArduinoInterface(Node):
             json_read = json.loads(line)  # Convert to dictionary
             
             if json_read.get('type') == 0.0:  # Check if valid odometry data
-                # msg.twist.linear.x = json_read.get("trans_v", 0.0)
-                # msg.twist.angular.z = json_read.get("angular_v", 0.0)
-                # self.publisher_.publish(msg)
                 self.v = json_read.get("trans_v", 0.0)
                 self.w = json_read.get("angular_v", 0.0)
 
             self.get_logger().info(f'Publishing: {json_read}')
+            #self.get_logger().info(f'trans_vd: {self.v}')
+            #self.get_logger().info(f'angular_vd: {self.w}')
             # self.get_logger().info(f'Publishing: {msg}')
-            # self.get_logger().info(f'Publishing: {line}')
+            self.get_logger().info(f'Serial RAW: {line}')
             
-            current_time = self.get_clock().now()
-            dt = (current_time - self.last_time).nanoseconds / 1e9
-            self.last_time = current_time
+            #current_time = self.get_clock().now()
+            #dt = (current_time - self.last_time).nanoseconds / 1e9
+            #self.last_time = current_time
 
             # Compute robot velocity
-            v = self.v
+            """v = self.v
             omega = self.w
 
             # Update robot position
             self.x += v * math.cos(self.theta) * dt
             self.y += v * math.sin(self.theta) * dt
             self.theta += omega * dt
-
+            """
             # Publish Odometry message
             """
             odom_msg = Odometry()
