@@ -24,21 +24,22 @@ class ArduinoInterface(Node):
             qos_profile=10)
         self.subscription  # prevent unused variable warning
         
-        self.publisher_ = self.create_publisher(String, 'odom', 10)
+        self.publisher_ = self.create_publisher(TwistStamped, 'cmd_vel', 10)
         timer_period = 0.2  # seconds
         self.timer = self.create_timer(timer_period, self.serialRead)
         self.i = 0
 
     #serialRead takes in odemetry data and formats it accordingly for the odemetry topic. 
     def serialRead(self):
-        msg = String()
-        #line = self.ser.readline().decode('utf-8').rstrip()
-        #test = json.loads(line) 
-        #msg.data = line
-        #TODO: parse the serial to check if it is odemetry data or not. if it is, publish it.
-        #TODO: format the odemetry data
-        #self.publisher_.publish(msg)
-        #self.get_logger().info('Publishing: "%s"' % msg.data)
+        msg = TwistStamped()
+        line = self.ser.readline().decode('utf-8').rstrip()
+        json_read = json.loads(line) 
+        if (json_read["type"] == 1):        
+            msg.twist.linear.x = json_read["trans_v"]
+            msg.twist.angular.z = json_read["angular_v"]
+            self.publisher_.publish(msg)
+        
+        self.get_logger().info('Publishing: "%s"' % json_read)
         self.i += 1
         
 
