@@ -48,11 +48,6 @@ class ArduinoInterface(Node):
         # Timer to update odometry
         # self.create_timer(0.05, self.update_odometry)  # 20 Hz
 
-    def update_odometry(self):
-        # Simulated wheel encoder readings (replace with real sensor data)
-        # Time step
-        
-
     def serialRead(self):
         """Reads odometry data from Arduino and publishes to cmd_vel"""
         # msg = TwistStamped()
@@ -90,6 +85,7 @@ class ArduinoInterface(Node):
             self.theta += omega * dt
 
             # Publish Odometry message
+            """
             odom_msg = Odometry()
             odom_msg.header.stamp = current_time.to_msg()
             odom_msg.header.frame_id = "odom"
@@ -113,9 +109,8 @@ class ArduinoInterface(Node):
             odom_tf.transform.rotation.x = odom_quat[0]
             odom_tf.transform.rotation.y = odom_quat[1]
             odom_tf.transform.rotation.z = odom_quat[2]
-            odom_tf.transform.rotation.w = odom_quat[3]
-            self.tf_broadcaster.sendTransform(odom_tf)
-            
+            odom_tf.transform.rotation.w = odom_quat[3]"""
+            #self.tf_broadcaster.sendTransform(odom_tf)
         except json.JSONDecodeError:
             self.get_logger().warn(f'Invalid JSON received: {line}')
             
