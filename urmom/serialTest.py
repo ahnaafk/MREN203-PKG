@@ -28,9 +28,7 @@ class ArduinoInterface(Node):
             callback=self.serialWrite,
             qos_profile=10)
         self.subscription  # prevent unused variable warning
-        
-        self.publisher_ = self.create_publisher(TwistStamped, 'cmd_vel', 10)
-        self.i = 0
+
           # Odom Publishers
         self.odom_pub = self.create_publisher(Odometry, '/odom', 10)
  #       self.tf_broadcaster = tf2_ros.TransformBroadcaster(self)
@@ -45,56 +43,33 @@ class ArduinoInterface(Node):
 
         # Timer to update odometry
         
-    def computeOdom(self):
+    def publishOdom(self):
         #Compute robot velocity
         VERBOSE = False
         v = self.v
         omega = self.w
         
-        current_time = self.get_clock().now()
-        dt = (current_time - self.last_time).nanoseconds / 1e9
-        self.last_time = current_time
-
-        # Update robot position
-        self.x += v * math.cos(self.theta) * dt
-        self.y += v * math.sin(self.theta) * dt
-        self.theta += omega * dt
         
-        if (VERBOSE == True): 
-            self.get_logger().info(f'x: {self.x}')
-            self.get_logger().info(f'y: {self.y}')
-            self.get_logger().info(f'theta: {self.theta}')
+
         """
         # Publish Odometry message
         """
         odom_msg = Odometry()
-        odom_msg.header.stamp = current_time.to_msg()
         odom_msg.header.frame_id = "odom"
         odom_msg.child_frame_id = "base_link"
-        odom_msg.pose.pose.position.x = self.x
-        odom_msg.pose.pose.position.y = self.y
-        odom_quat = tf_transformations.quaternion_from_euler(0, 0, self.theta)
-        odom_msg.pose.pose.orientation.x = odom_quat[0]
-        odom_msg.pose.pose.orientation.y = odom_quat[1]
-        odom_msg.pose.pose.orientation.z = odom_quat[2]
-        odom_msg.pose.pose.orientation.w = odom_quat[3]
+        odom_msg.twist.twist.linear.x = v
+        odom_msg.twist.twist.angular.z = omega
+        
+        if (VERBOSE == True): 
+            self.get_logger().info(f'v: {v}')
+            self.get_logger().info(f'omega: {omega}')
+            self.get_logger().info(f'odometry: {odom_msg}')
+
         self.odom_pub.publish(odom_msg)
 
-        # Publish TF transformation
-        odom_tf = TransformStamped()
-        odom_tf.header.stamp = current_time.to_msg()
-        odom_tf.header.frame_id = "odom"
-        odom_tf.child_frame_id = "base_link"
-        odom_tf.transform.translation.x = self.x
-        odom_tf.transform.translation.y = self.y
-        odom_tf.transform.rotation.x = odom_quat[0]
-        odom_tf.transform.rotation.y = odom_quat[1]
-        odom_tf.transform.rotation.z = odom_quat[2]
-        odom_tf.transform.rotation.w = odom_quat[3]
-        #self.tf_broadcaster.sendTransform(odom_tf)
 
     def serialRead(self):
-        """Reads odometry data from Arduino and publishes to cmd_vel"""
+        """Reads odometry data from Arduino and calls publishOdom"""
         VERBOSE = False
         
         try:
@@ -116,8 +91,8 @@ class ArduinoInterface(Node):
                 self.get_logger().info(f'angular_vd: {self.w}')
                 self.get_logger().info(f'Serial RAW: {line}')
             
-
-            self.computeOdom()
+            #once it reads in the correct data, publish odom 
+            self.publishOdom()
 
         except json.JSONDecodeError:
             self.get_logger().warn(f'Invalid JSON received: {line}')
